@@ -5,7 +5,7 @@
 #
 # Inputs:
 # Utilities/gaussian_process_utilities.R
-# Data/rainfall.rds
+# Data/03.rainfall.rds
 #
 # Outputs: (none)
 #
@@ -58,7 +58,7 @@ source("Utilities/gaussian_process_utilities.R")
 # --------------------------
 
 # read in rainfall data
-rainfall_data <- readRDS("Data/rainfall.rds")
+rainfall_data <- readRDS("Data/03.rainfall.rds")
 
 # plot rainfall data
 ggplot(rainfall_data) + theme_bw() +
