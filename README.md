@@ -13,7 +13,7 @@ This repos holds the material for a training workshop on *drjacoby*. The worksho
 
 ## What to do before the workshop
 
-Please install *drjacoby* ahead of the workshop so we can hit the ground running. This will also help identify any issues with installation so we can iron them out in a less pressured environment!
+Please install *drjacoby* in advance so we can hit the ground running. This will also help identify any issues with installation so we can iron them out in a less pressured environment!
 
 (details to follow)
 
