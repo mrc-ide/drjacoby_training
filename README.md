@@ -29,7 +29,7 @@ We will cover the following topics:
 - Model fit and model comparison. Credible intervals and posterior predictive checks
 - Activating parallel tempering to improve mixing and deal with multi-modality
 - Linking with other packages. Example of a compartmental model in *Odin*
-- Using C++ functions to speed things up
+- Using C++ functions and running in parallel to speed things up
 
 ## Structure of the material
 
