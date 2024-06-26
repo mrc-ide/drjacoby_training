@@ -8,12 +8,11 @@ update(R) <- R + gamma * I
 N <- S + I + R
 
 ## Initial states:
-initial(S) <- S_ini # will be user-defined
+initial(S) <- 1 - I_ini
 initial(I) <- I_ini # will be user-defined
 initial(R) <- 0
 
 ## User defined parameters - default in parentheses:
-S_ini <- user(1)
 I_ini <- user(1e-3)
 beta <- user(0.2)
 gamma <- user(0.1)

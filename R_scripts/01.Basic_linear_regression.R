@@ -23,8 +23,12 @@
 # ------------------------------------------------------------------
 
 # the simplest way to install drjacoby is via the runiverse:
-#(TODO)
-#devtools::install_github("mrc-ide/drjacoby", ref = "v1.5.3")
+#install.packages('drjacoby', repos = 'https://mrc-ide.r-universe.dev')
+
+# if that fails, you should follow the installation instructions here:
+# https://mrc-ide.github.io/drjacoby/articles/installation.html
+
+#devtools::install_github("mrc-ide/drjacoby")
 library(drjacoby)
 
 # load packages
@@ -106,7 +110,7 @@ names(mcmc)
 head(mcmc$output)
 
 # things to do with parallel tempering are in the pt element. We can ignore this
-# if we've only used a single temperature rung
+# most of the time
 head(mcmc$pt)
 
 # MCMC diagnostics are in the diagnostics element
@@ -133,12 +137,12 @@ mcmc$parameters
 
 # we can browse through the trace plots for each parameter in turn. This plots
 # the sampling phase only
-plot_par(mcmc)
+plot_trace(mcmc)
 
 # we can also be more specific with this plot, for example setting the
 # parameter(s) we are interested in and which phases to plot. Let's plot both
 # the burn-in and sampling phases together
-plot_par(mcmc, show = "slope", phase = "both")
+plot_trace(mcmc, show = "slope", phase = "both")
 
 # what we are looking for:
 # - chains started far apart but converged over time. This is why it is important
@@ -159,10 +163,13 @@ plot_credible(mcmc) +
 
 # we can explore the relationship between two parameters via a biviariate
 # scatterplot
-plot_cor(mcmc, "slope", "intercept")
+plot_scatter(mcmc, "slope", "intercept")
 
-# We may want to know which ones are strongly correlated. We can explore this by
-# plotting the correlation matrix
+# we can also produce scatterplots of every pair of parameters
+plot_pairs(mcmc)
+
+# we may want to know which parameters are strongly correlated. We can explore
+# this by plotting the correlation matrix
 plot_cor_mat(mcmc)
 
 # ----------------------------

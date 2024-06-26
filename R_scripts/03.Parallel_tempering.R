@@ -14,9 +14,7 @@
 # various steps involved in tuning PT to get best results.
 #
 # ------------------------------------------------------------------
-# load packages. For this script you will need the GGally package
-#install.packages("GGally")
-library(GGally)
+# load packages
 library(tidyverse)
 
 # ------------------------------------------------------------------
@@ -69,30 +67,23 @@ mcmc <- run_mcmc(data = trees,
 mcmc$diagnostics
 
 # when you browse trace plots you should see chains failing to converge
-plot_par(mcmc, phase = "both")
+plot_trace(mcmc, phase = "both")
 
 # when we produce bivariate scatterplots we can see the reason - strong
-# correlations making it difficult for the sampler to move around freely
-plot_cor(mcmc, "intercept", "slope")
+# correlations making it difficult for the sampler to move around freely. All
+# three coefficients are strongly correlated, although sigma appears relatively
+# independent
+plot_pairs(mcmc)
 
-# we can use the ggpairs function from the GGally package to produce a similar
-# plot comparing all variables. All three coefficients are strongly correlated,
-# although sigma appears relatively independent as we might expect
-mcmc$output |>
-  filter(phase == "sampling") |>
-  sample_n(1e3) |>
-  ggpairs(aes(col = as.factor(chain)),
-          columns = c("intercept", "slope", "quadratic", "sigma"),
-          lower = list(continuous = wrap("points", size = 0.5))) + theme_bw()
-
-# we should NOT go ahead with the MCMC output! Failing to converge or mix means
-# we do not have a reliable description of the posterior distribution. Our
-# parameter estimates will likely be biased, and there may even be regions of
-# the posterior that are completely unexplored. We need to fix this.
+# we should NOT go ahead with exploring the MCMC output! Failing to converge or
+# mix means that we do not have a reliable description of the posterior
+# distribution. Our parameter estimates will likely be biased, and there may
+# even be regions of the posterior that are completely unexplored. We need to
+# fix this before going on.
 
 # ------------------------------------------------------------------
-#### PART2 - TUNING PARALLEL TEMPERING
-# parallel tempering (PT) can get us out of this quandry, but it also brings
+#### PART2 - PARALLEL TEMPERING
+# parallel tempering (PT) can get us out of this quandary, but it also brings
 # with it some extra tuning steps and diagnostic checks.
 
 # let's re-run the MCMC, this time using 5 temperature rungs. This will take
@@ -117,8 +108,9 @@ plot_mc_acceptance(mcmc)
 # between adjacent rungs. We need to see positive values all the way along this
 # plot, and ideally somewhere around 25%. For this initial MCMC run we have zero
 # acceptance between rungs 1 and 2 (the "hottest" rungs). This means whatever
-# rung1 was doing, it wasn't being passed up to rung2 and so was wasted effort.
-# How can we fix this? First, we can try increasing the number of rungs:
+# rung1 was doing, the information wasn't being passed up to rung2 and so was
+# wasted effort. How can we fix this? First, we could try increasing the number
+# of rungs:
 mcmc <- run_mcmc(data = trees,
                  df_params = df_params,
                  loglike = loglike,
@@ -132,15 +124,17 @@ plot_mc_acceptance(mcmc)
 
 # this has increased the coupling rate between almost all rungs, but the rate
 # between rung1 and rung2 is still stubbornly at zero. We could further increase
-# the rungs, but that is starting to cost us in terms of efficiency. A better
-# option is to redistribute the existing rungs. Currently they are equally
-# spaced between 0 and 1, but we want to concentrate them closer to zero. For
-# example:
-z <- seq(0, 1, l = 10)^5
-print(z)
+# the rungs, but that is starting to cost us in terms of efficiency, as the
+# run-time will scale approximately linearly with the number of rungs. A better
+# approach is to redistribute the existing rungs. Currently they are equally
+# spaced between 0 and 1, but we want to concentrate them closer to zero. We can
+# do this through the parameter alpha. The higher the value, the more squished
+# the rungs are towards zero.
+#
+# in the current version of drjacoby, the best way to tune rungs is simply to
+# try increasing values of alpha until you get good acceptance. In future
+# versions there will be a much better way of doing this!
 
-# we can use the beta_manual argument to input these values (we don't need to
-# specify the number of rungs when we do this)
 mcmc <- run_mcmc(data = trees,
                  df_params = df_params,
                  loglike = loglike,
@@ -148,27 +142,23 @@ mcmc <- run_mcmc(data = trees,
                  burnin = 1e3,
                  samples = 1e3,
                  chains = 5,
-                 beta_manual = z)
+                 rungs = 10,
+                 alpha = 5)
 
 plot_mc_acceptance(mcmc)
 
 # we now have positive swap rates over the entire temperature ladder, meaning we
-# can be confident that PT is working as expected
+# can be confident that PT is working as expected. We should now perform the
+# usual checks on the MCMC behaviour, including increasing the burn-in and
+# sampling iterations if needed
+mcmc$diagnostics$rhat
+mcmc$diagnostics$ess
 
-# returning to our usual diagnostics, we find that things are looking much better
-mcmc$diagnostics
+plot_trace(mcmc)
 
-plot_par(mcmc)
+plot_pairs(mcmc)
 
-mcmc$output |>
-  filter(phase == "sampling") |>
-  sample_n(1e3) |>
-  ggpairs(aes(col = as.factor(chain)),
-          columns = c("intercept", "slope", "quadratic", "sigma"),
-          lower = list(continuous = wrap("points", size = 0.5))) + theme_bw()
-
-# at this point I would run a "final" MCMC using more samples to get the ESS up
-# a bit higher
+# the following MCMC run gives results that I would consider acceptable
 mcmc <- run_mcmc(data = trees,
                  df_params = df_params,
                  loglike = loglike,
@@ -176,23 +166,22 @@ mcmc <- run_mcmc(data = trees,
                  burnin = 1e3,
                  samples = 1e4,
                  chains = 5,
-                 beta_manual = z)
+                 rungs = 10,
+                 alpha = 5)
 
-# everything should now look much healthier
 plot_mc_acceptance(mcmc)
 
-mcmc$diagnostics
+mcmc$diagnostics$rhat
+mcmc$diagnostics$ess
 
-plot_par(mcmc)
+plot_trace(mcmc)
 
-mcmc$output |>
-  filter(phase == "sampling") |>
-  sample_n(1e3) |>
-  ggpairs(aes(col = as.factor(chain)),
-          columns = c("intercept", "slope", "quadratic", "sigma"),
-          lower = list(continuous = wrap("points", size = 0.5))) + theme_bw()
+plot_pairs(mcmc)
 
-# in summary, there is some extra tuning to be done when using PT, which is a
-# bit annoying (the next version of drjacoby should do this tuning for you in a
-# cleverer way). But once it's going, it provides a really simple way of
-# improving mixing.
+# in summary, there are some extra tuning steps when using PT, which is a bit
+# annoying (the next version of drjacoby should do this tuning for you). But
+# once it's going, it provides a really simple way of improving mixing.
+
+# ----------------------------
+#### CHALLENGES!
+# - have a look at the next script, 03b.Multimodal_example.R, which gives a poorly mixing MCMC that you need to fix

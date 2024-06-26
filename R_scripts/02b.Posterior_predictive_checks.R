@@ -9,7 +9,8 @@
 # Outputs: (none)
 #
 # Purpose:
-# Perform posterior predictive checks on our MCMC output for the trees data analysis.
+# Perform posterior predictive checks on our MCMC output for the trees data
+# analysis.
 #
 # ------------------------------------------------------------------
 
@@ -21,16 +22,13 @@ library(tidyverse)
 mcmc <- readRDS("Data/02.mcmc_linear_regression.rds")
 
 # take a bunch of parameter draws from the posterior
-param_draws <- mcmc$output |>
-  filter(phase == "sampling") |>
-  sample_n(1e4) |>
-  mutate(draw = row_number())
+param_draws <- sample_chains(mcmc, sample_n = 1e3)
 
 # we want to simulate a new "synthetic" dataset for each value of our posterior
-# parameter draws. This dataset should have exactly the same dimensions as the
+# parameter draws. These datasets should have exactly the same dimensions as the
 # real data
 sim_data <- param_draws |>
-  group_by(draw) |>
+  group_by(sample) |>
   reframe(Girth = trees$Girth,
           Volume_sim = rnorm(nrow(trees), mean = intercept + slope*trees$Girth, sd = sigma))
 
@@ -40,7 +38,7 @@ sim_data <- param_draws |>
 # agree with the same summaries on the real data
 
 # let's choose some summary statistics. The nice thing about posterior
-# predictive checks is that you can choose any summary you want, but ideally
+# predictive checks is that you can choose any summary you want! But ideally
 # these should be driven by sensible arguments about the sorts of things we care
 # about getting right. You can think of them as sanity checks. For example, it
 # may be that the maximum volume has some special importance to us - perhaps we
@@ -50,7 +48,7 @@ sim_data <- param_draws |>
 # qualities of the data, and are not redundant. Here are just a few basic
 # examples:
 sim_summaries <- sim_data |>
-  group_by(draw) |>
+  group_by(sample) |>
   summarise(mean = mean(Volume_sim),
             variance = var(Volume_sim),
             min = min(Volume_sim),
@@ -65,30 +63,31 @@ head(sim_summaries)
 real_summaries <- data.frame(mean = mean(trees$Volume),
                              variance = var(trees$Volume),
                              min = min(trees$Volume),
-                             max = max(trees$Volume)) |>
-  pivot_longer(everything())
+                             max = max(trees$Volume))
 
-# finally, let's compare the posterior predictive distributions against the true values
+# finally, let's compare the posterior predictive distributions against the
+# values calculated from the real data (shown as red lines)
 sim_summaries |>
-  pivot_longer(cols = -draw) |>
+  pivot_longer(cols = -sample) |>
   ggplot() + theme_bw() +
   geom_histogram(aes(x = value), bins = 50) +
   facet_wrap(~name, scales = "free") +
-  geom_vline(aes(xintercept = value), linetype = "dashed", data = real_summaries)
+  geom_vline(aes(xintercept = value), col = "red",
+             data = pivot_longer(real_summaries, cols = everything()))
 
 # for the linear model you should find that some of the true values are in the
 # tails of the posterior predictive distributions. This indicates that the model
 # does not fit the data well. We kind of knew this from looking directly at the
 # credible intervals, but in some cases PPCs will pick up differences that
-# weren't immediately obvious from looking at the model fit. They are also
+# aren't immediately obvious from looking at the model fit. They are also
 # anchored in data-driven, real world measures that we care about, making them
 # excellent sanity checks.
 
 # ----------------------------
 #### CHALLENGES!
 # - repeat the process above, but using the quadratic model. Note that you'll have
-# to change the formula for simulating synthetic data from a linear model to a
-# quadratic model
-# - try coming up with your own sanity check statistics
+# to change the formula for simulating synthetic data (around line 33) from a
+# linear model to a quadratic model
 mcmc <- readRDS("Data/02.mcmc_quadratic_regression.rds")
+# - try coming up with your own sanity check statistics
 

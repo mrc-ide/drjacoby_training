@@ -7,11 +7,12 @@ This repository holds the material for a training workshop on *drjacoby*.
 
 Please install *drjacoby* in advance so we can hit the ground running. This will also help identify any issues with installation so we can iron them out in a less pressured environment!
 
-You should be able to install directly from the R-universe using this method. If it asks you to install from sources type "Y" for Yes
+You should be able to install directly from the R-universe using the following code. If it asks you to install from sources type "Y" for Yes
 ```{r}
 install.packages('drjacoby', repos = 'https://mrc-ide.r-universe.dev')
-library(drjacoby)
 ```
+
+If the R-universe method fails then please follow [these instructions](https://mrc-ide.github.io/drjacoby/articles/installation.html) instead.
 
 ## What the workshop will cover
 
