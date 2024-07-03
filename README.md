@@ -11,7 +11,7 @@ Please install *drjacoby* in advance so we can hit the ground running. This will
 
 You should be able to install directly from the R-universe using the following code. If it asks you to install from sources, type "Y" for Yes
 ```{r}
-install.packages('drjacoby', repos = 'https://mrc-ide.r-universe.dev')
+install.packages("drjacoby", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
 The R-universe method is quite new, and so may not work. If it fails then please follow [these instructions](https://mrc-ide.github.io/drjacoby/articles/installation.html) instead.
