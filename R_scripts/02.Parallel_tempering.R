@@ -1,4 +1,4 @@
-# 03.Parallel_tempering.R
+# 02.Parallel_tempering.R
 #
 # Author: Bob Verity
 # Date: 2024-06-20
@@ -15,6 +15,7 @@
 #
 # ------------------------------------------------------------------
 # load packages
+library(drjacoby)
 library(tidyverse)
 
 # ------------------------------------------------------------------
@@ -62,7 +63,7 @@ mcmc <- run_mcmc(data = trees,
                  samples = 1e3,
                  chains = 5)
 
-# when we look at diagnostics, we find poor convergence (rhat) an extremely low
+# when we look at diagnostics, we find poor convergence (rhat) and an extremely low
 # ESS. This is a sign that our MCMC is not mixing well
 mcmc$diagnostics
 
@@ -86,31 +87,10 @@ plot_pairs(mcmc)
 # parallel tempering (PT) can get us out of this quandary, but it also brings
 # with it some extra tuning steps and diagnostic checks.
 
-# let's re-run the MCMC, this time using 5 temperature rungs. This will take
-# around 5 times longer to run. I usually decrease the number of samples when
+# let's re-run the MCMC, this time using 10 temperature rungs. The run-time
+# scales approximately linearly with the number of rungs, so this will take
+# around 10 times longer to run. I usually decrease the number of samples when
 # running these sorts of test runs to make things faster
-mcmc <- run_mcmc(data = trees,
-                 df_params = df_params,
-                 loglike = loglike,
-                 logprior = logprior,
-                 burnin = 1e3,
-                 samples = 1e3,
-                 chains = 5,
-                 rungs = 5)
-
-# before we do any of our normal checks, we should check that PT did what we
-# expected. Let's produce a "Metropolis coupling" plot
-plot_mc_acceptance(mcmc)
-
-# the x-axis in this plot shows the different temperature rungs (we used 5).
-# Notice that the points on the plot fall *between* the rungs. That is because
-# these points represent the percentage of time that information was swapped
-# between adjacent rungs. We need to see positive values all the way along this
-# plot, and ideally somewhere around 25%. For this initial MCMC run we have zero
-# acceptance between rungs 1 and 2 (the "hottest" rungs). This means whatever
-# rung1 was doing, the information wasn't being passed up to rung2 and so was
-# wasted effort. How can we fix this? First, we could try increasing the number
-# of rungs:
 mcmc <- run_mcmc(data = trees,
                  df_params = df_params,
                  loglike = loglike,
@@ -120,27 +100,43 @@ mcmc <- run_mcmc(data = trees,
                  chains = 5,
                  rungs = 10)
 
+# before we do any of our normal checks, we should check that PT did what we
+# expected. Let's produce a "Metropolis coupling" plot
 plot_mc_acceptance(mcmc)
 
-# this has increased the coupling rate between almost all rungs, but the rate
-# between rung1 and rung2 is still stubbornly at zero. We could further increase
-# the rungs, but that is starting to cost us in terms of efficiency, as the
-# run-time will scale approximately linearly with the number of rungs. A better
-# approach is to redistribute the existing rungs. Currently they are equally
-# spaced between 0 and 1, but we want to concentrate them closer to zero. We can
-# do this through the parameter alpha. The higher the value, the more squished
-# the rungs are towards zero.
+# the x-axis in this plot shows the different temperature rungs (we used 10).
+# Notice that the points on the plot fall *between* the rungs. That is because
+# these points represent the percentage of time that information was swapped
+# between adjacent rungs. We need to see positive values all the way along this
+# plot, and ideally somewhere around 25%. For this MCMC run we have zero
+# acceptance between rungs 1 and 2 (the "hottest" rungs). This means whatever
+# rung1 was doing, the information wasn't being passed up to rung2 and so was
+# wasted effort.
 #
-# in the current version of drjacoby, the best way to tune rungs is simply to
-# try increasing values of alpha until you get good acceptance. In future
-# versions there will be a much better way of doing this!
+# How can we fix this? We could further increase the rungs, but that is starting
+# to cost us in terms of efficiency. A better approach is to redistribute the
+# existing rungs. Currently they are equally spaced between 0 and 1, but we want
+# to concentrate them closer to zero. We can do this through the parameter
+# alpha. The higher the value, the more squished the rungs are towards zero.
+#
+# drjacoby does not tune the temperature ladder for you. Instead, our approach
+# is simply to try increasing values of alpha until you get good acceptance. NB,
+# there has been really nice work recently on choosing the number and
+# distribution of rungs automatically, but that is beyond the scope of this
+# workshop. If you feel motivated to integrate these methods in drjacoby...be my
+# guest!
+#
+# The following run uses alpha = 5, and also increases the number of samples. It
+# should take around half a minute, and gives results that I would consider
+# acceptable. If it takes more than 5 minutes you should ask your line manager
+# for a new laptop.
 
 mcmc <- run_mcmc(data = trees,
                  df_params = df_params,
                  loglike = loglike,
                  logprior = logprior,
                  burnin = 1e3,
-                 samples = 1e3,
+                 samples = 1e4,
                  chains = 5,
                  rungs = 10,
                  alpha = 5)
@@ -158,30 +154,16 @@ plot_trace(mcmc)
 
 plot_pairs(mcmc)
 
-# the following MCMC run gives results that I would consider acceptable
-mcmc <- run_mcmc(data = trees,
-                 df_params = df_params,
-                 loglike = loglike,
-                 logprior = logprior,
-                 burnin = 1e3,
-                 samples = 1e4,
-                 chains = 5,
-                 rungs = 10,
-                 alpha = 5)
-
-plot_mc_acceptance(mcmc)
-
-mcmc$diagnostics$rhat
-mcmc$diagnostics$ess
-
-plot_trace(mcmc)
-
-plot_pairs(mcmc)
-
 # in summary, there are some extra tuning steps when using PT, which is a bit
-# annoying (the next version of drjacoby should do this tuning for you). But
-# once it's going, it provides a really simple way of improving mixing.
+# annoying. But once it's going, it provides a really simple way of improving
+# mixing that did not require us to understand *why* the model was mixing badly.
 
 # ----------------------------
 #### CHALLENGES!
-# - have a look at the next script, 03b.Multimodal_example.R, which gives a poorly mixing MCMC that you need to fix
+# - PT got us out of trouble here, but it is rarely the most efficient fix. Look
+#   again at the plot_pairs() output from PART1. Can you get this model to mix
+#   *without* PT, by changing the model itself? Hint: what happens to those
+#   correlations if you subtract mean(trees$Girth) from Girth before fitting?
+#   Note that the meaning of the intercept and slope will change
+# - if you have time, have a look at the next script, 02b.Multimodal_example.R.
+#   This is a posterior with multiple peaks, where that trick will not save you

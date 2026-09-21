@@ -1,25 +1,25 @@
-# 03b.Multimodal_example.R
+# 02b.Multimodal_example.R
 #
 # Author: Bob Verity
 # Date: 2024-06-25
 #
 # Inputs:
 # Utilities/gaussian_process_utilities.R
-# Data/03.rainfall.rds
+# Data/02b.rainfall.rds
 #
 # Outputs: (none)
 #
 # Purpose:
 # This is an example of a model where the posterior distribution is multi-modal
 # (contains multiple peaks). This can cause an MCMC to mix badly, or in extreme
-# cases can fail to explore some peaks entirely. Your job is to read through the
+# cases to fail to explore some peaks entirely. Your job is to read through the
 # script and see if you can get the MCMC to mix.
 #
 # Our data consists of (made up) rainfall data, measured every 2 weeks for a
 # period of 2 years. The pattern in the data is clearly highly seasonal, which
 # is typical of some regions of the world e.g. northern Africa.
 #
-# Our plan is to model this data using a Gaussian process (GP). This method is
+# Our plan is to model these data using a Gaussian process (GP). This method is
 # useful for data that changes smoothly over time or space. You'll see in the
 # likelihood function that we start by making a Gaussian kernel. This describes
 # the autocorrelation in the data in terms of three parameters:
@@ -32,7 +32,7 @@
 #   amplitude. It defines the average vertical variation of the function from its
 #   mean. A larger sigma_f means that the function values can deviate more from
 #   the mean.
-# 3) sigma_N: sigma_n denotes the noise level in the observations (the standard
+# 3) sigma_n: sigma_n denotes the noise level in the observations (the standard
 #   deviation of the noise). It accounts for the uncertainty or measurement noise
 #   in the observed data. A larger sigma_n indicates more noise in the
 #   observations, and the GP will be less confident about fitting the data
@@ -43,6 +43,7 @@
 # 
 # ------------------------------------------------------------------
 # load packages
+library(drjacoby)
 #install.packages("mvtnorm")
 library(mvtnorm)
 library(tidyverse)
@@ -55,7 +56,7 @@ source("Utilities/gaussian_process_utilities.R")
 # --------------------------
 
 # read in rainfall data
-rainfall_data <- readRDS("Data/03.rainfall.rds")
+rainfall_data <- readRDS("Data/02b.rainfall.rds")
 
 # plot rainfall data
 ggplot(rainfall_data) + theme_bw() +

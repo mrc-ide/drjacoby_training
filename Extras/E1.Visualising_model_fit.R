@@ -1,28 +1,34 @@
-# 02.Visualising_model_fit.R
+# E1.Visualising_model_fit.R
 #
 # Author: Bob Verity
 # Date: 2024-06-20
 #
-# Inputs: Data/02.mcmc_linear_regression.rds
-#         Data/02.mcmc_quadratic_regression.rds
+# Inputs: Data/E1.mcmc_linear_regression.rds
+#         Data/E1.mcmc_quadratic_regression.rds
 #
 # Outputs: (none)
 #
 # Purpose:
+# SELF-STUDY SCRIPT - not covered in the live session.
+#
 # Demonstrates ways that we can explore the fit of a model to data, and how this
-# differs from comparing between models.
+# differs from comparing between models. Picks up where step 6 of
+# R_scripts/01.Basic_linear_regression.R left off, going on to credible
+# intervals and posterior predictive intervals. There is a worked solution to
+# the challenge in Extras/E1.Visualising_model_fit_SOLUTION.R
 #
 # ------------------------------------------------------------------
 
 # load packages
+library(drjacoby)
 library(tidyverse)
 
 # ------------------------------------------------------------------
 ### PART1 - Credible intervals
 
-# start by loading in a successful MCMC run from the previous script on linear
-# modelling of the trees dataset
-mcmc <- readRDS("Data/02.mcmc_linear_regression.rds")
+# start by loading in a successful MCMC run of the linear model of the trees
+# dataset, from R_scripts/01.Basic_linear_regression.R
+mcmc <- readRDS("Data/E1.mcmc_linear_regression.rds")
 
 # we can make simple density plots of our parameters, but what does this
 # actually tell us about our model fit? Not much really
@@ -145,7 +151,7 @@ ggplot(trees) + theme_bw() +
 # You know when I said I have a lovely example of a quadratic model fit? The bad
 # news is, I lied. The good news is, you get the pleasure of doing it yourself!
 # I already ran the MCMC for you so you can just import the mcmc object
-mcmc <- readRDS("Data/02.mcmc_quadratic_regression.rds")
+mcmc <- readRDS("Data/E1.mcmc_quadratic_regression.rds")
 
 # you'll see that this output has columns for intercept, slope, and quadratic.
 head(mcmc$output)

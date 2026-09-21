@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-/ignore
+.DS_Store
+README.html

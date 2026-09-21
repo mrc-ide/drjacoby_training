@@ -1,25 +1,28 @@
-# 02b.Posterior_predictive_checks.R
+# E2.Posterior_predictive_checks.R
 #
 # Author: Bob Verity
 # Date: 2024-06-20
 #
-# Inputs: Data/02.mcmc_linear_regression.rds
-#         Data/02.mcmc_quadratic_regression.rds
+# Inputs: Data/E1.mcmc_linear_regression.rds
+#         Data/E1.mcmc_quadratic_regression.rds
 #
 # Outputs: (none)
 #
 # Purpose:
+# SELF-STUDY SCRIPT - not covered in the live session.
+#
 # Perform posterior predictive checks on our MCMC output for the trees data
-# analysis.
+# analysis. Follows on from Extras/E1.Visualising_model_fit.R
 #
 # ------------------------------------------------------------------
 
 # load packages
+library(drjacoby)
 library(tidyverse)
 
-# we'll start by reading in completed MCMC output from the previous sessions.
+# we'll start by reading in completed MCMC output for the trees data.
 # Let's focus first on the linear model
-mcmc <- readRDS("Data/02.mcmc_linear_regression.rds")
+mcmc <- readRDS("Data/E1.mcmc_linear_regression.rds")
 
 # take a bunch of parameter draws from the posterior
 param_draws <- sample_chains(mcmc, sample_n = 1e3)
@@ -86,8 +89,8 @@ sim_summaries |>
 # ----------------------------
 #### CHALLENGES!
 # - repeat the process above, but using the quadratic model. Note that you'll have
-# to change the formula for simulating synthetic data (around line 33) from a
-# linear model to a quadratic model
-mcmc <- readRDS("Data/02.mcmc_quadratic_regression.rds")
+# to change the formula for simulating synthetic data (the rnorm() call inside
+# sim_data) from a linear model to a quadratic model
+mcmc <- readRDS("Data/E1.mcmc_quadratic_regression.rds")
 # - try coming up with your own sanity check statistics
 

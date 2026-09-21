@@ -13,16 +13,18 @@
 # with R. Our objective will be to fit a model to predict the volume of a tree
 # based on the girth. Once complete, we will look at the MCMC output format
 # produced by drjacoby, and explore some plotting functions and MCMC
-# diagnostics.
+# diagnostics. Finally, we will plot the fitted model against the data to see
+# whether it is actually any good.
 #
 # PLEASE MESS WITH THIS FILE!
 # The best way to get used to drjacoby is to fiddle with it. Try changing
 # things, even try breaking things if you want. Try copying code into another
-# script and running on your own data if you want.
+# script and running on your own data, don't feel limited to this example.
 #
 # ------------------------------------------------------------------
 
-# the simplest way to install drjacoby is via the runiverse:
+# the simplest way to install drjacoby is via the runiverse. Choose "Y" when
+# asked to install from source.
 #install.packages('drjacoby', repos = 'https://mrc-ide.r-universe.dev')
 
 # if that fails, you should follow the installation instructions here:
@@ -31,7 +33,7 @@
 #devtools::install_github("mrc-ide/drjacoby")
 library(drjacoby)
 
-# load packages
+# load other packages
 library(tidyverse)
 
 # ----------------------------
@@ -45,11 +47,11 @@ is.list(trees)
 #### STEP 2 - parameters
 # define parameters data.frame. At a minimum, this needs to have a "name", "min"
 # and "max" column. You can make this any way you like, but we have a simple
-# function to make life easier in simple examples:
+# utility function in the package to make life easier:
 df_params <- define_params(name = "slope", min = -10, max = 10,
                            name = "intercept", min = 0, max = 100,
                            name = "sigma", min = 0, max = Inf)
-
+df_params
 
 # ----------------------------
 #### STEP 3 - loglikelihood and logprior functions
@@ -103,7 +105,10 @@ mcmc <- run_mcmc(data = trees,
 # ----------------------------
 #### STEP 5 - explore output and check behaviour
 
-# the mcmc output format is a list with four elements
+# printing the raw object gives an overview
+mcmc
+
+# looking under the hood, the output is a list with four elements
 names(mcmc)
 
 # the parameter draws are in the output element
@@ -161,7 +166,7 @@ plot_trace(mcmc, show = "slope", phase = "both")
 plot_credible(mcmc) +
   coord_flip()
 
-# we can explore the relationship between two parameters via a biviariate
+# we can explore the relationship between two parameters via a bivariate
 # scatterplot
 plot_scatter(mcmc, "slope", "intercept")
 
@@ -173,9 +178,50 @@ plot_pairs(mcmc)
 plot_cor_mat(mcmc)
 
 # ----------------------------
+#### STEP 6 - does the model actually fit the data?
+# everything in step 5 tells us whether the MCMC behaved. None of it tells us
+# whether the model is any good! For that we need to look at the fitted model
+# against the data.
+
+# start by taking 100 parameter draws from the posterior
+param_draws <- sample_chains(mcmc, 100)
+head(param_draws)
+
+# each of these draws defines a straight line. Let's calculate the predicted
+# volume along each line, over a continuous range of girths
+girth_predict <- seq(0, 25, l = 101)
+
+trajectories <- param_draws |>
+  expand_grid(girth_predict) |>
+  mutate(vol_predict = intercept + slope * girth_predict)
+
+# now overlay these lines on the data. The spread of the lines shows our
+# posterior uncertainty in the fitted relationship
+ggplot(trees, aes(x = Girth, y = Volume)) + theme_bw() +
+  geom_line(aes(x = girth_predict, y = vol_predict, group = sample),
+            col = "dodgerblue", alpha = 0.2, data = trajectories) +
+  geom_point()
+
+# the first thing to note about this model fit is that it's absolute trash. A
+# linear model is not a good choice for these data, which clearly have some sort
+# of curve. Also our limitation that the intercept must be greater than zero has
+# constrained the model so it barely captures the trend.
+#
+# this is worth dwelling on: our MCMC diagnostics were all excellent! Good
+# diagnostics tell you that you have found the posterior. They tell you nothing
+# about whether the model describes the data. Always plot the fit.
+#
+# the recipe we used here (draw from the posterior, push each draw through the
+# model, plot against the data) works for any model, and we will use it again
+# later on an epidemic model. If you want to take it further, the Extras folder
+# has self-study scripts on credible intervals, posterior predictive intervals
+# and posterior predictive checks.
+
+# ----------------------------
 #### CHALLENGES!
+# - try adding a quadratic term to get a better fit. Keep an eye on the
+#   diagnostics when you do - we will pick this up in the next script
 # - try fiddling with the priors. What happens if you give sigma a normal prior going from -Inf to Inf?
-# - try adding a quadratic term
 # - try making a linear model in terms of both Girth and Height
 
 
